@@ -49,8 +49,12 @@ namespace MultiThreading.Task6.Continuation
 
             // d.    Continuation task should be executed outside of the thread pool when the parent task would be cancelled
             var cts = new CancellationTokenSource();
-            var taskD = Task.Run(() => throw new OperationCanceledException(), cts.Token)
-                .ContinueWith(t => Console.WriteLine("Continuation task D"), TaskContinuationOptions.OnlyOnCanceled | TaskContinuationOptions.LongRunning);
+            var taskD = Task.Run(() =>
+                {
+                    if (cts.Token.IsCancellationRequested)
+                        cts.Token.ThrowIfCancellationRequested();
+                }, cts.Token)
+               .ContinueWith(t => Console.WriteLine("Continuation task D"), TaskContinuationOptions.OnlyOnCanceled | TaskContinuationOptions.LongRunning);
             cts.Cancel();
             try
             {

@@ -1,10 +1,4 @@
-﻿/*
- * 5. Write a program which creates two threads and a shared collection:
- * the first one should add 10 elements into the collection and the second should print all elements
- * in the collection after each adding.
- * Use Thread, ThreadPool or Task classes for thread creation and any kind of synchronization constructions.
- */
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,25 +17,46 @@ namespace MultiThreading.Task5.Threads.SharedCollection
             Console.WriteLine("Use Thread, ThreadPool or Task classes for thread creation and any kind of synchronization constructions.");
             Console.WriteLine();
 
-            Task.Run(() =>
+            Task firstTask = Task.Run(() =>
             {
                 Monitor.Enter(locker);
-                for (int i = 0; i < 10; i++)
+                try
                 {
-                    collection.Add(i);
+                    for (int i = 1; i <= 10; i++)
+                    {
+                        collection.Add(i);
+                        Monitor.Pulse(locker);
+                    }
                 }
-                Monitor.Exit(locker);
+                finally
+                {
+                    Monitor.Exit(locker);
+                }
             });
 
-            Task.Run(() =>
+            Task secondTask = Task.Run(() =>
             {
                 Monitor.Enter(locker);
-                foreach (int i in collection)
+                try
                 {
-                    Console.WriteLine("element`s value: " + i);
+                    while (collection.Count < 10)
+                    {
+                        Monitor.Wait(locker);
+                    }
+
+                    for (int i = 1; i <= 10; i++)
+                    {
+                        List<int> elementsToPrint = collection.GetRange(0, i);
+                        Console.WriteLine(string.Join(", ", elementsToPrint));
+                    }
                 }
-                Monitor.Exit(locker);
+                finally
+                {
+                    Monitor.Exit(locker);
+                }
             });
+
+            Task.WaitAll(firstTask, secondTask);
 
             Console.ReadLine();
         }

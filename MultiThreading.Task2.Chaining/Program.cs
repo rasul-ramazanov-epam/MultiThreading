@@ -7,6 +7,7 @@
  */
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace MultiThreading.Task2.Chaining
@@ -30,14 +31,14 @@ namespace MultiThreading.Task2.Chaining
 
         private static void ChainTasks()
         {
-            var random = new Random();
+            var threadLocalRandom = new ThreadLocal<Random>(() => new Random());
 
             var firstTask = Task.Run(() =>
             {
                 int[] numbers = new int[10];
                 for (int i = 0; i < numbers.Length; i++)
                 {
-                    numbers[i] = random.Next(1, 100);
+                    numbers[i] = threadLocalRandom.Value.Next(1, 100);
                 }
                 Console.WriteLine("First Task Array: " + string.Join(", ", numbers));
                 return numbers;
@@ -46,7 +47,7 @@ namespace MultiThreading.Task2.Chaining
             var secondTask = firstTask.ContinueWith(previousTask =>
             {
                 int[] numbers = previousTask.Result;
-                int randomMultiplier = random.Next(1, 10);
+                int randomMultiplier = threadLocalRandom.Value.Next(1, 10);
                 for (int i = 0; i < numbers.Length; i++)
                 {
                     numbers[i] *= randomMultiplier;
